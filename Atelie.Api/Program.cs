@@ -4,12 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Swagger
+// Controllers + Swagger
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers();
 
-// Registrar Services
+// Services
 builder.Services.AddScoped<FinanceiroService>();
 builder.Services.AddScoped<MaterialService>();
 builder.Services.AddScoped<EstoqueService>();
@@ -18,18 +18,30 @@ builder.Services.AddScoped<VendaService>();
 builder.Services.AddScoped<EncomendaService>();
 builder.Services.AddScoped<TodoListService>();
 
-// DbContext + PostgreSQL usando appsettings.json
+// DbContext + PostgreSQL (Supabase Pooler)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<AtelieDbContext>(options =>
-    options.UseNpgsql(connectionString)
-);
 
+builder.Services.AddDbContext<AtelieDbContext>(options =>
+{
+    options.UseNpgsql(
+        connectionString,
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null
+            );
+        });
+});
+
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173") // front local
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -37,8 +49,8 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Middleware
-if (app.Environment.IsDevelopment())
+// Swagger em produção
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
