@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Atelie.Api.Services;
 using Atelie.Api.Entities;
 using Atelie.Api.Enums;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Atelie.Api.Controllers
 {
@@ -16,13 +18,29 @@ namespace Atelie.Api.Controllers
             _service = service;
         }
 
-        // GET: api/Materiais
-        [HttpGet]
-        public async Task<IActionResult> ObterTodos()
+        private Guid ObterUsuarioId()
         {
-            var materiais = await _service.ObterTodos();
-            return Ok(materiais);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            return userId != null ? Guid.Parse(userId) : Guid.Empty;
+
         }
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> ObterTodos(
+            int page,
+            int pageSize = 20
+        )
+        {
+            var userId = ObterUsuarioId();
+
+            var resultado = await _service.ObterPaginado(userId, page, pageSize);
+
+            return Ok(resultado);
+        }
+
 
         // GET: api/Materiais
         [HttpGet("resumo")]
@@ -54,16 +72,16 @@ namespace Atelie.Api.Controllers
             return Ok(materiais);
         }
 
-        // POST: api/Materiais
         [HttpPost]
         public async Task<IActionResult> Criar([FromBody] Material material)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            material.UserId = ObterUsuarioId();
 
             var resultado = await _service.Criar(material);
+
             return CreatedAtAction(nameof(ObterPorId), new { id = resultado.Id }, resultado);
         }
+
 
         // PUT: api/Materiais/5
         [HttpPut("{id}")]

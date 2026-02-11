@@ -7,6 +7,7 @@ using Atelie.Api.Entities;
 using System.Text;
 using CsvHelper;
 using System.Globalization;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Atelie.Api.Controllers
 {

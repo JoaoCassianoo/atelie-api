@@ -2,6 +2,7 @@ using Atelie.Api.Entities;
 using Atelie.Api.Services;
 using Atelie.Api.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Atelie.Api.Controllers
 {

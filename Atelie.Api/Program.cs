@@ -1,6 +1,7 @@
 using Atelie.Api.Data;
 using Atelie.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,20 @@ builder.Services.AddScoped<TodoListService>();
 
 // DbContext + PostgreSQL (Supabase Pooler)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = supabaseUrl + "auth/v1";
+        options.TokenValidationParameters = new (){
+            ValidateAudience = false,
+            ValidIssuer = supabaseUrl + "auth/v1",
+            ValidateIssuer = true,
+            ValidateLifetime = true,
+            NameClaimType = "sub"
+        };
+    });
 
 builder.Services.AddDbContext<AtelieDbContext>(options =>
 {
@@ -47,10 +62,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAuthorization(options =>{
+    options.FallbackPolicy = options.DefaultPolicy;
+});
+
 var app = builder.Build();
 
 // Swagger em produção
-if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -58,6 +77,8 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 
 app.UseCors("FrontendPolicy");
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseHttpsRedirection();
 app.MapControllers();
 

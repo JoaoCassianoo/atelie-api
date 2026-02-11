@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Atelie.Api.Data;
 using Atelie.Api.Entities;
 using Atelie.Api.Enums;
+using Atelie.Api.Dtos;
 
 namespace Atelie.Api.Services
 {
@@ -13,6 +14,25 @@ namespace Atelie.Api.Services
         {
             _context = context;
         }
+
+        
+        public async Task<object> ObterPaginado(Guid userId, int page, int pageSize)
+        {
+            var query = _context.Materiais
+                .AsNoTracking()
+                .Where(m => m.UserId == userId);
+
+            var total = await query.CountAsync();
+
+            var dados = await query
+                .OrderBy(m => m.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new { total, page, pageSize, dados };
+        }
+
 
         public async Task<IEnumerable<Material>> ObterTodos()
         {

@@ -3,6 +3,7 @@ using Atelie.Api.Services;
 using Atelie.Api.Entities;
 using Atelie.Api.Enums;
 using Atelie.Api.Dtos;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Atelie.Api.Controllers
 {
